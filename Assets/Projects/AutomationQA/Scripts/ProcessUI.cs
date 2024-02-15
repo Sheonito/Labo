@@ -10,4 +10,5 @@ public class ProcessUI : MonoBehaviour
     public TMP_Text nameText;
     public Button button;
     public IntPtr handle;
+    public ProcessPicker.RECT rect;
 }

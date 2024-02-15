@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
@@ -30,6 +31,18 @@ public class ProcessPicker : MonoBehaviour
     
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
+    static extern bool SetForegroundWindow(IntPtr hWnd);
+    
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    static extern bool ShowWindow(IntPtr hWnd, uint nCmdShow);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+    
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
     static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
     [StructLayout(LayoutKind.Sequential)]
@@ -41,9 +54,52 @@ public class ProcessPicker : MonoBehaviour
         public int Bottom;
     }
     
+    const uint SW_RESTORE = 9;
+    const uint SWP_SHOWWINDOW = 0x40;
+    
     public ScrollRect scrollRect;
     public ProcessUI processUIPrefab;
+    public Button selectButton;
+    public Button unSelectButton;
+    private ProcessUI curProcess;
+    private bool isProcessSelected;
     void Start()
+    {
+        selectButton.onClick.AddListener(() => SelectProcess().Forget());
+        unSelectButton.onClick.AddListener(UnSelectProcess);
+        
+        ShowProcesses();
+    }
+
+    private async UniTaskVoid SelectProcess()
+    {
+        if (curProcess == null)
+            return;
+        
+        // 윈도우를 복원하고 최상위로 가져오기
+        ShowWindow(curProcess.handle, SW_RESTORE);
+        
+        // 현재 프로세스 위치 및 width,height 변경
+        // SetWindowPos(curProcess.handle, IntPtr.Zero, 0, 0, 0, 0, SWP_SHOWWINDOW);
+        
+        isProcessSelected = true;
+        while (isProcessSelected)
+        {
+            GetWindowRect(curProcess.handle,out RECT rect);
+            curProcess.rect = rect;
+            Logger.Print($"Current Process: {curProcess.nameText.text} \nTop: {rect.Top}\nBottom: {rect.Bottom}\nLeft: {rect.Left}\nRight: {rect.Right}");
+            
+            await UniTask.Yield();
+            
+        }
+    }
+
+    private void UnSelectProcess()
+    {
+        isProcessSelected = false;
+    }
+
+    private void ShowProcesses()
     {
         List<Process> processes = GetProcess();
         foreach (Process process in processes)
@@ -89,6 +145,7 @@ public class ProcessPicker : MonoBehaviour
 
     private void PickProcess(ProcessUI process)
     {
+        curProcess = process;
         RECT rect = GetWindowRECT(process.handle);
         Logger.Print($"Current Process: {process.nameText.text} \nTop: {rect.Top}\nBottom: {rect.Bottom}\nLeft: {rect.Left}\nRight: {rect.Right}");
     }
