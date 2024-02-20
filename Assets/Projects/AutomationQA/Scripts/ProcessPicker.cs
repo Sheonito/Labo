@@ -8,6 +8,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
+using LogTextType = Define.LogTextType;
 
 public class ProcessPicker : MonoBehaviour
 {
@@ -44,6 +45,9 @@ public class ProcessPicker : MonoBehaviour
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+    
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool GetClientRect(IntPtr hWnd, out RECT lpRect);
 
     [StructLayout(LayoutKind.Sequential)]
     public struct RECT
@@ -69,12 +73,15 @@ public class ProcessPicker : MonoBehaviour
         unSelectButton.onClick.AddListener(UnSelectProcess);
         
         ShowProcesses();
+        
     }
 
     private async UniTaskVoid SelectProcess()
     {
         if (curProcess == null)
             return;
+        
+        InputDetector.SetHook(curProcess);
         
         // 윈도우를 복원하고 최상위로 가져오기
         ShowWindow(curProcess.handle, SW_RESTORE);
@@ -85,9 +92,19 @@ public class ProcessPicker : MonoBehaviour
         isProcessSelected = true;
         while (isProcessSelected)
         {
-            GetWindowRect(curProcess.handle,out RECT rect);
+            GetWindowRect(curProcess.handle,out RECT windowRect);
+            GetClientRect(curProcess.handle,out RECT clientRect);
+            
+            RECT rect = new RECT();
+            int titlebarHeight = (windowRect.Bottom - windowRect.Top) - clientRect.Bottom;
+            rect.Top = windowRect.Top + titlebarHeight;
+            rect.Bottom = windowRect.Bottom;
+            rect.Left = windowRect.Left;
+            rect.Right = windowRect.Right;
+            
             curProcess.rect = rect;
-            Logger.Print($"Current Process: {curProcess.nameText.text} \nTop: {rect.Top}\nBottom: {rect.Bottom}\nLeft: {rect.Left}\nRight: {rect.Right}");
+            Logger.Print(LogTextType.ProcessRect,$"Current Process: {curProcess.nameText.text} \nTop: {rect.Top}\nBottom: {rect.Bottom}\nLeft: {rect.Left}\nRight: {rect.Right}");
+            Logger.Print(LogTextType.KeyboardInput,$"ClientMouseX: {InputDetector.mousePos.x}\nClientMouseY: {InputDetector.mousePos.y}");
             
             await UniTask.Yield();
             
@@ -97,6 +114,7 @@ public class ProcessPicker : MonoBehaviour
     private void UnSelectProcess()
     {
         isProcessSelected = false;
+        InputDetector.UnHook();
     }
 
     private void ShowProcesses()
@@ -106,6 +124,7 @@ public class ProcessPicker : MonoBehaviour
         {
             // 결과 출력
             ProcessUI processUI = Instantiate(processUIPrefab, scrollRect.content);
+            processUI.process = process;
             processUI.nameText.text = process.ProcessName;
             processUI.handle = process.MainWindowHandle;
             processUI.button.onClick.AddListener(() => PickProcess(processUI));
@@ -146,13 +165,30 @@ public class ProcessPicker : MonoBehaviour
     private void PickProcess(ProcessUI process)
     {
         curProcess = process;
-        RECT rect = GetWindowRECT(process.handle);
-        Logger.Print($"Current Process: {process.nameText.text} \nTop: {rect.Top}\nBottom: {rect.Bottom}\nLeft: {rect.Left}\nRight: {rect.Right}");
+        
+        GetWindowRect(curProcess.handle,out RECT windowRect);
+        GetClientRect(curProcess.handle,out RECT clientRect);
+            
+        RECT rect = new RECT();
+        int titlebarHeight = (windowRect.Bottom - windowRect.Top) - clientRect.Bottom;
+        rect.Top = windowRect.Top + titlebarHeight;
+        rect.Bottom = windowRect.Bottom;
+        rect.Left = windowRect.Left;
+        rect.Right = windowRect.Right;
+            
+        curProcess.rect = rect;
+        
+        Logger.Print(LogTextType.ProcessRect,$"Current Process: {process.nameText.text} \nTop: {rect.Top}\nBottom: {rect.Bottom}\nLeft: {rect.Left}\nRight: {rect.Right}");
     }
 
     private RECT GetWindowRECT(IntPtr handle)
     {
         GetWindowRect(handle, out var rect);
         return rect;
+    }
+
+    private void OnApplicationQuit()
+    {
+        InputDetector.UnHook();
     }
 }
