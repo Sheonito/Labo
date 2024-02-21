@@ -2,8 +2,26 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Define
+namespace AutomationQA
 {
+    public enum InputState
+    {
+        None = -1,
+        Down,
+        Stay,
+        Up
+    }
+
+    public enum MouseMessages
+    {
+        WM_LBUTTONDOWN = 0x0201, // 왼족 마우스 Down
+        WM_LBUTTONUP = 0x0202, // 왼쪽 마우스 Up
+        WM_MOUSEMOVE = 0x0200,
+        WM_MOUSEWHEEL = 0x020A,
+        WM_RBUTTONDOWN = 0x0204, // 오른쪽 마우스 Down
+        WM_RBUTTONUP = 0x0205, // 오른쪽 마우스 Up
+    }
+
     public enum LogTextType
     {
         None = -1,
@@ -11,7 +29,7 @@ public class Define
         KeyboardInput,
     }
 
-    public enum WindowKeys
+    public enum InputType
     {
         None = 0,
         LButton = 1,
@@ -140,5 +158,7 @@ public class Define
         OemPeriod = 190,
         OemQuestion = 191,
         OemTilde = 192,
+        LeftMouse,
+        RightMouse,
     }
 }
