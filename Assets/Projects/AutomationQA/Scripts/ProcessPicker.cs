@@ -4,13 +4,15 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using AutomationQA.Input;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
-using LogTextType = Define.LogTextType;
 
-public class ProcessPicker : MonoBehaviour
+namespace AutomationQA
+{
+    public class ProcessPicker : MonoBehaviour
 {
     delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
@@ -67,6 +69,12 @@ public class ProcessPicker : MonoBehaviour
     public Button unSelectButton;
     private ProcessUI curProcess;
     private bool isProcessSelected;
+
+    private void Awake()
+    {
+        InputDetector.Init();
+    }
+
     void Start()
     {
         selectButton.onClick.AddListener(() => SelectProcess().Forget());
@@ -76,10 +84,53 @@ public class ProcessPicker : MonoBehaviour
         
     }
 
+    private static RECT GetResolutionRECT(IntPtr handle)
+    {
+        GetWindowRect(handle,out RECT windowRect);
+        GetClientRect(handle,out RECT clientRect);
+            
+        RECT rect = new RECT();
+        int titlebarHeight = (windowRect.Bottom - windowRect.Top) - clientRect.Bottom;
+        rect.Top = windowRect.Top + titlebarHeight;
+        rect.Bottom = windowRect.Bottom;
+        rect.Left = windowRect.Left;
+        rect.Right = windowRect.Right;
+
+        return rect;
+    }
+
+    private static Vector2 SyncMousePos(Vector2 targetResolution,Vector2 curResolution,Vector2 targetMousePos)
+    {
+        float ratioX = curResolution.x - targetResolution.x;
+        float ratioY = curResolution.y - targetResolution.y;
+        float synchronizedMousePosX = targetMousePos.x * ratioX;
+        float synchronizedMousePosY = targetMousePos.y * ratioY;
+        Vector2 synchronizedMousePos = new Vector2(synchronizedMousePosX,synchronizedMousePosY);
+        
+        return synchronizedMousePos;
+    }
+
     private async UniTaskVoid SelectProcess()
     {
         if (curProcess == null)
             return;
+
+        // 전에 저장했던 해상도가 있다면 해당 해상도에 대응하기
+        int savedResolutionWidth = PlayerPrefs.GetInt("ResolutionWidth");
+        int savedResolutionHeight = PlayerPrefs.GetInt("ResolutionHeight");
+        Vector2 savedResolution = new Vector2(savedResolutionWidth,savedResolutionHeight);
+        if (savedResolution != Vector2.zero)
+        {
+            Debug.Log("savedResolution: " + savedResolution);
+        }
+
+        // 해상도 저장
+        RECT resolutionRect = GetResolutionRECT(curProcess.handle);
+        int resolutionWidth = resolutionRect.Right - resolutionRect.Left;
+        int resolutionHeight = resolutionRect.Bottom - resolutionRect.Top;
+        Vector2 resolutionSize = new Vector2(resolutionWidth,resolutionHeight); 
+        PlayerPrefs.SetInt("ResolutionWidth",(int)resolutionSize.x);
+        PlayerPrefs.SetInt("ResolutionHeight",(int)resolutionSize.y);
         
         InputDetector.SetHook(curProcess);
         
@@ -192,3 +243,5 @@ public class ProcessPicker : MonoBehaviour
         InputDetector.UnHook();
     }
 }
+}
+
