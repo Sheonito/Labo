@@ -43,6 +43,7 @@ namespace AutomationQA.Input
 
         private static bool isHookRegistered;
         private static ProcessUI curProcessUI;
+        public static Vector2 processMousePos = new Vector2();
         public static Vector2 mousePos = new Vector2();
         private static Dictionary<InputType, InputState> inputsState;
         private static Dictionary<InputType, Vector2> inputsPos;
@@ -60,7 +61,6 @@ namespace AutomationQA.Input
 
         public static bool GetInputDown(InputType inputType)
         {
-
             if (inputsState[inputType] == InputState.Down)
             {
                 return true;
@@ -148,7 +148,8 @@ namespace AutomationQA.Input
                 int mouseY = hookStruct.pt.Y;
                 int processMouseX = mouseX - curProcessUI.rect.Left - 8;
                 int processMouseY = mouseY - curProcessUI.rect.Top + 8;
-                mousePos = new Vector2(processMouseX, processMouseY);
+                processMousePos = new Vector2(processMouseX, processMouseY);
+                mousePos = new Vector2(mouseX, mouseY);
 
                 inputsState[InputType.LeftMouse] = InputState.Down;
                 inputsPos[InputType.LeftMouse] = new Vector2(processMouseX, processMouseY);
@@ -164,6 +165,7 @@ namespace AutomationQA.Input
                 int processMouseX = mouseX - curProcessUI.rect.Left - 8;
                 int processMouseY = mouseY - curProcessUI.rect.Top + 8;
 
+                mousePos = new Vector2(mouseX, mouseY);
                 inputsState[InputType.LeftMouse] = InputState.Up;
                 inputsPos[InputType.LeftMouse] = new Vector2(processMouseX, processMouseY);
                 ChangeInputState(InputType.LeftMouse, InputState.None);
@@ -180,6 +182,7 @@ namespace AutomationQA.Input
                     int processMouseX = mouseX - curProcessUI.rect.Left - 8;
                     int processMouseY = mouseY - curProcessUI.rect.Top + 8;
 
+                    mousePos = new Vector2(mouseX, mouseY);
                     inputsPos[InputType.LeftMouse] = new Vector2(processMouseX, processMouseY);
                 }
             }
@@ -194,6 +197,7 @@ namespace AutomationQA.Input
                 int processMouseX = mouseX - curProcessUI.rect.Left - 8;
                 int processMouseY = mouseY - curProcessUI.rect.Top + 8;
 
+                mousePos = new Vector2(mouseX, mouseY);
                 inputsState[InputType.RightMouse] = InputState.Down;
                 inputsPos[InputType.RightMouse] = new Vector2(processMouseX, processMouseY);
                 ChangeInputState(InputType.RightMouse, InputState.Stay);
@@ -208,6 +212,7 @@ namespace AutomationQA.Input
                 int processMouseX = mouseX - curProcessUI.rect.Left - 8;
                 int processMouseY = mouseY - curProcessUI.rect.Top + 8;
 
+                mousePos = new Vector2(mouseX, mouseY);
                 inputsState[InputType.RightMouse] = InputState.Up;
                 inputsPos[InputType.RightMouse] = new Vector2(processMouseX, processMouseY);
                 ChangeInputState(InputType.RightMouse, InputState.None);
@@ -224,10 +229,11 @@ namespace AutomationQA.Input
                     int processMouseX = mouseX - curProcessUI.rect.Left - 8;
                     int processMouseY = mouseY - curProcessUI.rect.Top + 8;
 
+                    mousePos = new Vector2(mouseX, mouseY);
                     inputsPos[InputType.RightMouse] = new Vector2(processMouseX, processMouseY);
                 }
             }
-
+            
 
             return CallNextHookEx(_mouseHookID, nCode, wParam, lParam);
         }
@@ -253,7 +259,10 @@ namespace AutomationQA.Input
             inputsState[inputType] = state;
 
             if (state == InputState.None)
+            {
+                mousePos = Vector2.zero;
                 inputsPos[inputType] = Vector2.zero;
+            }
         }
     }
 }

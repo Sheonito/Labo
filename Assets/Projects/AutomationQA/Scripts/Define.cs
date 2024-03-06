@@ -26,7 +26,8 @@ namespace AutomationQA
     {
         None = -1,
         ProcessRect,
-        KeyboardInput,
+        ProcessMousePos,
+        SyncMousePos
     }
 
     public enum InputType

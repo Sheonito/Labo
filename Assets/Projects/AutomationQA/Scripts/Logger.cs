@@ -12,13 +12,16 @@ namespace AutomationQA
     {
         public TMP_Text processRectText;
         private static TMP_Text s_ProcessRectText;
-        public TMP_Text keyboardInputText;
-        private static TMP_Text s_keyboardInputText;
+        [FormerlySerializedAs("keyboardInputText")] public TMP_Text processMouseText;
+        private static TMP_Text s_ProcessMouseText;
+        public TMP_Text syncMousePosText;
+        private static TMP_Text s_SyncMousePos;
     
         private void Awake()
         {
             s_ProcessRectText = processRectText;
-            s_keyboardInputText = keyboardInputText;
+            s_ProcessMouseText = processMouseText;
+            s_SyncMousePos = syncMousePosText;
         }
 
         public static void Print(LogTextType textType,string log)
@@ -29,8 +32,12 @@ namespace AutomationQA
                     s_ProcessRectText.text = log;
                     break;
             
-                case LogTextType.KeyboardInput:
-                    s_keyboardInputText.text = log;
+                case LogTextType.ProcessMousePos:
+                    s_ProcessMouseText.text = log;
+                    break;
+                
+                case LogTextType.SyncMousePos:
+                    s_SyncMousePos.text = log;
                     break;
             }
         
@@ -44,8 +51,12 @@ namespace AutomationQA
                     s_ProcessRectText.text += log;
                     break;
             
-                case LogTextType.KeyboardInput:
-                    s_keyboardInputText.text += log;
+                case LogTextType.ProcessMousePos:
+                    s_ProcessMouseText.text += log;
+                    break;
+                
+                case LogTextType.SyncMousePos:
+                    s_SyncMousePos.text += log;
                     break;
             }
         
