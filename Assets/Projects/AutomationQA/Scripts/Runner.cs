@@ -24,5 +24,7 @@ public class Runner : MonoBehaviour
             Vector2 inputPos = InputDetector.GetInputPos(InputType.LeftMouse);
             // Debug.Log("UpInputPos: " + inputPos);
         }
+        
+        
     }
 }
