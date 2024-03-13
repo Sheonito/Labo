@@ -5,26 +5,31 @@ using AutomationQA;
 using AutomationQA.Input;
 using UnityEngine;
 
-public class Runner : MonoBehaviour
+namespace AutomationQA
 {
-    private void Update()
+    public class Runner : MonoBehaviour
     {
-        if (InputDetector.GetInputDown(InputType.LeftMouse))
+        private void Update()
         {
-            Vector2 inputPos = InputDetector.GetInputPos(InputType.LeftMouse);
-            // Debug.Log("DownInputPos: " + inputPos);
-        }
-        if (InputDetector.GetInput(InputType.LeftMouse))
-        {
-            Vector2 inputPos = InputDetector.GetInputPos(InputType.LeftMouse);
-            // Debug.Log("StayInputPos: " + inputPos);
-        }
-        if (InputDetector.GetInputUp(InputType.LeftMouse))
-        {
-            Vector2 inputPos = InputDetector.GetInputPos(InputType.LeftMouse);
-            // Debug.Log("UpInputPos: " + inputPos);
-        }
+            if (WindowInputSystem.GetInputDown(InputType.LeftMouse))
+            {
+                Vector2 inputPos = WindowInputSystem.GetInputPos(InputType.LeftMouse);
+                // Debug.Log("DownInputPos: " + inputPos);
+            }
+            if (WindowInputSystem.GetInput(InputType.LeftMouse))
+            {
+                Vector2 inputPos = WindowInputSystem.GetInputPos(InputType.LeftMouse);
+                // Debug.Log("StayInputPos: " + inputPos);
+            }
+            if (WindowInputSystem.GetInputUp(InputType.LeftMouse))
+            {
+                Vector2 inputPos = WindowInputSystem.GetInputPos(InputType.LeftMouse);
+                // Debug.Log("UpInputPos: " + inputPos);
+            }
         
         
+        }
     }
 }
+
+

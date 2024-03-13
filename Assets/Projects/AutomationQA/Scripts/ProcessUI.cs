@@ -14,6 +14,6 @@ namespace AutomationQA
         public TMP_Text nameText;
         public Button button;
         public IntPtr handle;
-        public ProcessPicker.RECT rect;
+        public RECT rect;
     }
 }
