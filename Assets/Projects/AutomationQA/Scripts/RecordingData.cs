@@ -29,6 +29,8 @@ namespace AutomationQA
     public class RecordingData
     {
         public List<MouseData> mousePosList;
+        public float processWidth;
+        public float processHeight;
     }
 
 }

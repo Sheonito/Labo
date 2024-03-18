@@ -26,7 +26,7 @@ namespace AutomationQA.Common
 
             RECT rect = new RECT();
             int titlebarHeight = (windowRect.Bottom - windowRect.Top) - clientRect.Bottom;
-            rect.Top = isIncludedTitleBar ? windowRect.Top : windowRect.Top + titlebarHeight;
+            rect.Top = isIncludedTitleBar ? windowRect.Top + titlebarHeight : windowRect.Top;
             rect.Bottom = windowRect.Bottom;
             rect.Left = windowRect.Left;
             rect.Right = windowRect.Right;
