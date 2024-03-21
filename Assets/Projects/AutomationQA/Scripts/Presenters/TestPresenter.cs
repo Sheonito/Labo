@@ -35,6 +35,7 @@ namespace AutomationQA
             testView.RecordButton.onClick.AddListener(StartRecord);
             testView.StopRecordButton.onClick.AddListener(StopRecord);
             testView.PlayButton.onClick.AddListener(Play);
+            Logger.Log(LogTextType.DeviceResolution,Screen.currentResolution.ToString());
         }
 
         private void OnApplicationQuit()
@@ -67,48 +68,54 @@ namespace AutomationQA
 
             // 프로세스를 최상단으로 이동
             WindowApi.ShowWindow(curProcess.handle, WindowApi.SW_RESTORE);
+            
+            RECT curProcessRECT = ResolutionUtil.GetProcessResolutionRECT(curProcess.handle, false);
+            Logger.Log(LogTextType.ProcessName,curProcess.nameText.text);
+            Logger.Log(LogTextType.ProcessRect,curProcess.nameText.text);
+            Logger.Log(LogTextType.ProcessRect,$"{curProcessRECT.Top}(Top) {curProcessRECT.Bottom}(Bottom)\n{curProcessRECT.Left}(Left) {curProcessRECT.Right}(Right)");
         }
 
-        private void StartRecord()
+        private float recordElapsedTime;
+        private async void StartRecord()
         {
             isRecording = true;
             testView.RecordButton.gameObject.SetActive(false);
             testView.StopRecordButton.gameObject.SetActive(true);
 
             WindowInputSystem.onMouseInput += RecordMouseData;
+            while (isRecording)
+            {
+                recordElapsedTime += Time.deltaTime;
+                await UniTask.Yield();
+            }
         }
 
         private void RecordMouseData()
         {
             RECT curProcessRECT = ResolutionUtil.GetProcessResolutionRECT(curProcess.handle, false);
             curProcess.rect = curProcessRECT;
-
-            Logger.Print(LogTextType.ProcessRect,
-                $"Current Process: {curProcess.nameText.text} \nTop: {curProcessRECT.Top}\nBottom: {curProcessRECT.Bottom}\nLeft: {curProcessRECT.Left}\nRight: {curProcessRECT.Right}");
             bool isOnSelectedProcess = WindowInputSystem.IsMouseClickedOnSelectedProcess(curProcess.process.Id);
             if (isOnSelectedProcess)
             {
-                if ((WindowInputSystem.processMouseData.x != 0 || WindowInputSystem.processMouseData.y != 0) &&
-                    WindowInputSystem.processMouseData.x > 0 &&
-                    WindowInputSystem.processMouseData.y > 0)
+                float processMousePosX = WindowInputSystem.processMouseData.x;
+                float processMousePosY = WindowInputSystem.processMouseData.y;
+                if ((processMousePosX != 0 || processMousePosY != 0) && processMousePosX > 0 && processMousePosY > 0)
                 {
-                    MouseData saveMouseData = new MouseData(WindowInputSystem.processMouseData.x,
-                        WindowInputSystem.processMouseData.y, WindowInputSystem.processMouseData.inputState);
+                    MouseData saveMouseData = new MouseData(processMousePosX, processMousePosY,
+                        WindowInputSystem.processMouseData.inputState,recordElapsedTime);
                     saveMousePosList.Add(saveMouseData);
+                    
+                    Logger.Log(LogTextType.TouchProcessPos, $"{processMousePosX},{processMousePosY}");
                 }
             }
             else
             {
-                Logger.Print(LogTextType.ProcessMousePos, $"ClientMouseX: No detected\nClientMouseY: No detected");
+                Logger.Log(LogTextType.TouchProcessPos, "No detected");
             }
         }
 
         private void StopRecord()
         {
-            isRecording = false;
-            testView.StopRecordButton.gameObject.SetActive(false);
-            testView.RecordButton.gameObject.SetActive(true);
-
             // RecordingData에 Data 할당
             RecordingData recordingData = new RecordingData();
             recordingData.mousePosList = saveMousePosList;
@@ -120,7 +127,15 @@ namespace AutomationQA
             // 로컬에 녹화 데이터 저장하기
             File.WriteAllText(savePath, saveData);
 
+            // 데이터 리셋
+            isRecording = false;
+            recordElapsedTime = 0;
+            testView.StopRecordButton.gameObject.SetActive(false);
+            testView.RecordButton.gameObject.SetActive(true);
+            
             WindowInputSystem.onMouseInput -= RecordMouseData;
+            saveMousePosList.Clear();
+            Logger.ResetLog();
         }
 
         private async void Play()
@@ -128,6 +143,7 @@ namespace AutomationQA
             string saveData = File.ReadAllText(savePath);
             RecordingData recordingData = JsonConvert.DeserializeObject<RecordingData>(saveData);
             List<MouseData> mouseDataList = recordingData.mousePosList;
+            int preMilElapsedTime = 0;
             for (int i = 0; i < mouseDataList.Count; i++)
             {
                 // 마우스 좌표 프로세스 해상도 대응
@@ -141,8 +157,8 @@ namespace AutomationQA
                 int mouseY = (int)(curProcessRECT.Top + synchronizedMousePos.y);
                 
                 // 화면 해상도에 따라 mouseX와 mouseY를 조정
-                int scaledMouseX = (mouseX * 65535) / 1920;
-                int scaledMouseY = (mouseY * 65535) / 1080;
+                int scaledMouseX = (mouseX * 65535) / Screen.currentResolution.width;
+                int scaledMouseY = (mouseY * 65535) / Screen.currentResolution.height;
 
                 // 프로세스를 Foreground로 이동
                 WindowApi.SetForegroundWindow(curProcess.handle);
@@ -150,11 +166,25 @@ namespace AutomationQA
                 // 프로세스를 최상단으로 이동
                 WindowApi.ShowWindow(curProcess.handle, WindowApi.SW_RESTORE);
                 
-                // 마우스 이동
-                await UniTask.Delay(1000);
+                // 마우스 이벤트 실행
+                float elapsedTime = mouseDataList[i].elapsedTime;
+                int milElapsedTime = UniTaskUtil.ConvertSecToMilSec(elapsedTime);
+                await UniTask.Delay(milElapsedTime - preMilElapsedTime);
+                preMilElapsedTime = milElapsedTime;
+
                 WindowApi.mouse_event(WindowApi.MOUSEEVENTF_ABSOLUTE | WindowApi.MOUSEEVENTF_MOVE, scaledMouseX, scaledMouseY, 0, 0);
-                WindowApi.mouse_event(WindowApi.MOUSEEVENTF_LEFTDOWN, scaledMouseX, scaledMouseY, 0, 0);
-                WindowApi.mouse_event(WindowApi.MOUSEEVENTF_LEFTUP, scaledMouseX, scaledMouseY, 0, 0);
+                if (mouseDataList[i].inputState == InputState.Down)
+                {
+                    WindowApi.mouse_event(WindowApi.MOUSEEVENTF_LEFTDOWN, scaledMouseX, scaledMouseY, 0, 0);
+                }
+                else if (mouseDataList[i].inputState == InputState.Stay)
+                {
+                    
+                }
+                else // Up
+                {
+                    WindowApi.mouse_event(WindowApi.MOUSEEVENTF_LEFTUP, scaledMouseX, scaledMouseY, 0, 0);
+                }
             }
         }
 

@@ -6,6 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Projects/AutomationQA/Scene/AutomationQA.unity
-    guid: dce6476ee099aeb42bc74780eb816db4
+    path: Assets/Projects/AutomationQA/Scene/Main.unity
+    guid: a21d261a1f5411940ad628cca3afa281
   m_configObjects: {}

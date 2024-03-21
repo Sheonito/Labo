@@ -168,6 +168,8 @@ namespace AutomationQA.Input
             int processMouseX = mouseX - curProcessUI.rect.Left - 8;
             int processMouseY = mouseY - curProcessUI.rect.Top + 8;
             
+            Logger.Log(LogTextType.TouchDevicePos,$"{mouseX},{mouseY}");
+
             mousePos = new Vector2(mouseX, mouseY);
             processMouseData.x = processMouseX;
             processMouseData.y = processMouseY;

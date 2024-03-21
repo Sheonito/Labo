@@ -25,9 +25,12 @@ namespace AutomationQA
     public enum LogTextType
     {
         None = -1,
+        DeviceResolution,
+        ProcessName,
         ProcessRect,
-        ProcessMousePos,
-        SyncMousePos
+        TouchDevicePos,
+        TouchProcessPos,
+        PressedKey,
     }
 
     public enum InputType
