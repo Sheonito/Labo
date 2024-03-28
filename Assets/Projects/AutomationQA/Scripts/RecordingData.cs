@@ -13,11 +13,12 @@ namespace AutomationQA
         public InputState inputState;
         public InputType inputType;
 
-        public MouseData(float x, float y,InputState inputState,float elapsedTime)
+        public MouseData(float x, float y,InputState inputState,InputType inputType,float elapsedTime)
         {
             this.x = x;
             this.y = y;
             this.inputState = inputState;
+            this.inputType = inputType;
             this.elapsedTime = elapsedTime;
         }
 
